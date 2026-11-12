@@ -1,0 +1,101 @@
+{
+  "schema_version": 1,
+  "camera": {
+    "index": 0,
+    "width": 1920,
+    "height": 1080,
+    "fps": 30
+  },
+  "surface_size_m": [
+    0.18,
+    0.18
+  ],
+  "segmentation": {
+    "min_area_px": 100,
+    "kernel_size": 3,
+    "refine_dark_regions": true,
+    "suppress_shadows": true,
+    "recover_weak_surfaces": true,
+    "filter_small_regions": true,
+    "stabilize_live_shapes": true,
+    "reject_thin_regions": true,
+    "reject_field_filling_regions": true,
+    "separate_touching_regions": true,
+    "hsv_ranges": {
+      "red": [
+        [
+          [
+            0,
+            80,
+            50
+          ],
+          [
+            10,
+            255,
+            255
+          ]
+        ],
+        [
+          [
+            170,
+            80,
+            50
+          ],
+          [
+            179,
+            255,
+            255
+          ]
+        ]
+      ],
+      "green": [
+        [
+          [
+            40,
+            80,
+            50
+          ],
+          [
+            92,
+            255,
+            255
+          ]
+        ]
+      ],
+      "blue": [
+        [
+          [
+            95,
+            120,
+            50
+          ],
+          [
+            135,
+            255,
+            255
+          ]
+        ]
+      ],
+      "yellow": [
+        [
+          [
+            20,
+            80,
+            50
+          ],
+          [
+            38,
+            255,
+            255
+          ]
+        ]
+      ]
+    }
+  },
+  "geometry": {
+    "cube_side_m": 0.03,
+    "cylinder_radius_m": 0.015,
+    "cone_radius_m": 0.015,
+    "hemisphere_radius_m": 0.015
+  }
+}
