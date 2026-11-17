@@ -5,6 +5,7 @@ import cv2
 import numpy as np
 
 from objekterkennung.configuration import SETUP
+from objekterkennung.vision.shapes import APPROX_EPSILON_RATIO
 DISPLAY_COLORS = {"red": (0, 0, 255), "green": (0, 180, 0),
                   "blue": (255, 100, 0), "yellow": (0, 210, 230)}
 
@@ -127,13 +128,15 @@ class DetectionView:
         self.field_filling_enabled = tk.BooleanVar(root)
         self.touching_enabled = tk.BooleanVar(root)
         self.show_contours = tk.BooleanVar(root, value=False)
+        self.show_polygon_points = tk.BooleanVar(root, value=False)
         ttk.Label(filters, text="Erkennung und Darstellung", style="Section.TLabel").pack(anchor="w", pady=(0, 8))
         for label, variable, command in (
                 ("Auf Arbeitsfläche begrenzen", self.field_filter_enabled, app.change_field_filter),
                 ("Dünne Farbsäume ausblenden", self.thin_regions_enabled, app.change_region_filters),
                 ("Feldfüllende Farbregionen ausblenden", self.field_filling_enabled, app.change_region_filters),
                 ("Berührende Körper trennen", self.touching_enabled, app.change_region_filters),
-                ("Konturen anzeigen", self.show_contours, self.schedule_redraw)):
+                ("Konturen anzeigen", self.show_contours, self.schedule_redraw),
+                ("Konturpunkte anzeigen", self.show_polygon_points, self.schedule_redraw)):
             ttk.Checkbutton(filters, text=label, variable=variable, command=command).pack(anchor="w", pady=5)
         self.detect_button = ttk.Button(sidebar, text="Erkennung starten", command=app.detect)
         self.detect_button.pack(fill="x", pady=(10, 4))
@@ -276,6 +279,14 @@ class DetectionView:
                 cv2.rectangle(view, (x, y), (x + width - 1, y + height - 1), DISPLAY_COLORS[candidate.color], 2)
                 if self.show_contours.get():
                     cv2.drawContours(view, [candidate.contour], -1, DISPLAY_COLORS[candidate.color], 2, cv2.LINE_AA)
+                if self.show_polygon_points.get():
+                    points = candidate.contour.astype(np.float32)
+                    polygon = cv2.approxPolyDP(points, APPROX_EPSILON_RATIO * cv2.arcLength(points, True), True)
+                    polygon = np.rint(polygon).astype(np.int32)
+                    cv2.polylines(view, [polygon], True, (255, 255, 255), 1, cv2.LINE_AA)
+                    for px, py in polygon.reshape(-1, 2):
+                        cv2.circle(view, (int(px), int(py)), 6, (0, 0, 0), -1, cv2.LINE_AA)
+                        cv2.circle(view, (int(px), int(py)), 4, (255, 255, 255), -1, cv2.LINE_AA)
                 for color, thickness in (((0, 0, 0), 3), ((255, 255, 255), 1)):
                     cv2.putText(view, str(number), (x, max(18, y - 7)), cv2.FONT_HERSHEY_SIMPLEX, .5, color, thickness, cv2.LINE_AA)
                 if position.ground_point_px is not None:
