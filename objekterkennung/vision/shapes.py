@@ -76,6 +76,7 @@ def classify_shape(contour: np.ndarray) -> ShapePrediction:
         return ShapePrediction("unknown", "Stark eingezogene Kontur; Berührung oder Segmentierungsfehler möglich.", f)
 
 
+    # Rounded silhouettes can have six polygon vertices; area loss helps distinguish cylinders.
     rounded_six = f.polygon_vertices == 6 and f.polygon_area_loss >= .06
     cube_corners = ((4 <= f.polygon_vertices <= 6 and not rounded_six)
                     or (f.polygon_vertices == 7 and f.upper_width_ratio <= 0.90))
@@ -94,6 +95,7 @@ def classify_shape(contour: np.ndarray) -> ShapePrediction:
     ]
 
 
+    # Allow one narrowly missed feature to account for pixel-grid quantization.
     tolerance = {"height_width_ratio": (1 + f.height_width_ratio) / max(1, f.width_px - 1),
                  "extent": min(.03, 1 / f.width_px + 1 / f.height_px),
                  "upper_width_ratio": 1 / f.width_px, "circularity": .02}
@@ -110,6 +112,7 @@ def classify_shape(contour: np.ndarray) -> ShapePrediction:
     if not matches and len(near) == 1 and f.solidity >= .97:
         label, reason = near[0]
         return ShapePrediction(label, reason + " Ein Grenzmerkmal innerhalb begrenzter Rastertoleranz.", f)
+    # Keep ambiguous classifications unknown instead of choosing the first matching rule.
     if len(matches) != 1:
         reason = "Keine Formregel passt." if not matches else "Mehrere Formregeln passen; Ergebnis mehrdeutig."
         return ShapePrediction("unknown", reason, f)

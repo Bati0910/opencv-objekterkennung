@@ -30,6 +30,7 @@ def filter_to_field(result: DetectionResult, *, enabled: bool = True,
         return result
     if not len(result.segmentation.candidates) == len(result.shapes) == len(result.positions):
         raise ValueError("Flächenfilter benötigt zueinander passende Kandidaten, Formen und Positionen.")
+    # Prefer ground positions; silhouette contact is a fallback when position is unavailable.
     indices = [i for i, (candidate, position) in enumerate(zip(result.segmentation.candidates, result.positions))
                if position.status != "outside" and
                (position.position_norm is not None or calibration is None or _touches_field(candidate, calibration))]

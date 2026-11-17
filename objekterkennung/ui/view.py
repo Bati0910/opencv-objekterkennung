@@ -281,6 +281,7 @@ class DetectionView:
                     cv2.drawContours(view, [candidate.contour], -1, DISPLAY_COLORS[candidate.color], 2, cv2.LINE_AA)
                 if self.show_polygon_points.get():
                     points = candidate.contour.astype(np.float32)
+                    # Use the classifier approximation tolerance when displaying polygon corners.
                     polygon = cv2.approxPolyDP(points, APPROX_EPSILON_RATIO * cv2.arcLength(points, True), True)
                     polygon = np.rint(polygon).astype(np.int32)
                     cv2.polylines(view, [polygon], True, (255, 255, 255), 1, cv2.LINE_AA)

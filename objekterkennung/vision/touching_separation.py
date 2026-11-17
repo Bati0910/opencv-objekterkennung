@@ -18,6 +18,7 @@ class SeparationResult:
 def _distinct_cores(smooth: np.ndarray, first: tuple, second: tuple) -> bool:
     px, py, pr = first
     qx, qy, qr = second
+    # A saddle between distance peaks supports distinct cores even when they are close.
     level = min(smooth[py, px], smooth[qy, qx]) - max(2., .1 * min(pr, qr))
     if level <= 0:
         return False
@@ -28,6 +29,7 @@ def _distinct_cores(smooth: np.ndarray, first: tuple, second: tuple) -> bool:
 def _masked_distance_partition(source: np.ndarray, seeds: np.ndarray) -> np.ndarray:
     distance = cv2.distanceTransform(source, cv2.DIST_L2, 5)
     owners = np.where(source > 0, seeds, 0).astype(np.int32)
+    # Flood higher distance values first; insertion order breaks ties deterministically.
     queue = []
     age = 0
     for y, x in zip(*np.nonzero(owners >= 2)):
@@ -143,6 +145,7 @@ def split_touching(frame: np.ndarray, contour: np.ndarray, mask: np.ndarray,
                                   "retained_fraction": float(image_retained)}
 
 
+    # Use masked distance flooding when image watershed loses too much support to background.
     if image_retained < .88 and background_pixels:
         markers = _masked_distance_partition(source, seeds)
         report["method"] = "masked_distance"
@@ -182,6 +185,7 @@ def split_touching(frame: np.ndarray, contour: np.ndarray, mask: np.ndarray,
     report["retained_fraction"] = float(fraction)
     if fraction < .88:
         return unchanged("Trennung verliert zu viel der ursprünglichen Farbstützung.")
+    # Require improved geometric plausibility, not just multiple output regions.
     weighted_solidity = sum(p["area_px"] * p["solidity"] for p in report["parts"]) / sum(
         p["area_px"] for p in report["parts"])
     if weighted_solidity < solidity + .025:

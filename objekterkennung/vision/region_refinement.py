@@ -75,6 +75,7 @@ def refine_region(frame: np.ndarray, hsv: np.ndarray, contour: np.ndarray,
 
 
     incompatible = (~compatible) & (local_hsv[:, :, 1] >= 60) & (chroma >= 15)
+    # Protect other instances and explicit exclusions as definite GrabCut background.
     hard_background = incompatible | other_seed | ~allowed
     for other_color, mask in seed_masks.items():
         if other_color != color:
@@ -97,6 +98,7 @@ def refine_region(frame: np.ndarray, hsv: np.ndarray, contour: np.ndarray,
     kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
     foreground = cv2.morphologyEx(foreground, cv2.MORPH_CLOSE, kernel)
     foreground = cv2.morphologyEx(foreground, cv2.MORPH_OPEN, kernel)
+    # Reapply exclusions after morphology, which can fill previously excluded pixels.
     foreground[hard_background] = 0
     contours, _ = cv2.findContours(foreground, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     if not contours:
@@ -106,6 +108,7 @@ def refine_region(frame: np.ndarray, hsv: np.ndarray, contour: np.ndarray,
         mask = component_mask(foreground, candidate)
         return np.count_nonzero((mask > 0) & (core > 0))
 
+    # Follow the original color core rather than the largest nearby foreground region.
     selected = max(contours, key=seed_overlap)
     if seed_overlap(selected) < 0.90 * np.count_nonzero(core):
         return unchanged("Ergänzung enthält zu wenig der sicheren Farbstützung.")

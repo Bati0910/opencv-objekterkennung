@@ -57,6 +57,7 @@ def detect_frame(frame: np.ndarray, config: SegmentationConfig,
             else:
                 x, y, width, height = candidate.bbox_xywh
                 local = regions.masks[candidate.color][y:y + height, x:x + width]
+                # Delete only this instance, preserving separate components inside its contour.
                 support = component_mask(local, candidate.contour - (x, y))
                 local[support > 0] = 0
         regions.candidates = kept
@@ -65,6 +66,7 @@ def detect_frame(frame: np.ndarray, config: SegmentationConfig,
         for index, (candidate, shape) in enumerate(zip(regions.candidates, shapes)):
 
 
+            # Do not regrow accepted split instances, which could reconnect neighboring objects.
             if shape.label != "unknown" or candidate.separation_reason is not None:
                 continue
             recovered = recover_surface(frame, candidate.contour, candidate.color, regions.masks,

@@ -20,6 +20,7 @@ def _transform_point(matrix: np.ndarray, point: tuple[float, float]) -> tuple[fl
     projected = matrix @ homogeneous
 
 
+    # Check perspective division relative to the scale of its homogeneous denominator.
     denominator_scale = np.abs(matrix[2]) @ np.abs(homogeneous)
     if (not np.isfinite(projected).all()
             or abs(projected[2]) <= 1e-6 * max(denominator_scale, 1e-12)):
@@ -59,10 +60,12 @@ class PlaneCalibration:
 
         if not cv2.isContourConvex(contour) or cv2.contourArea(contour) < 16:
             raise ValueError("Die Ecken müssen ein konvexes Viereck in Umlaufreihenfolge bilden (mindestens 16 Pixel²).")
+        # Map ground-plane corners to the unit square; elevated surfaces are not calibrated.
         matrix = cv2.getPerspectiveTransform(contour, UNIT_CORNERS)
         if not np.isfinite(matrix).all() or np.linalg.cond(matrix) > 1e12:
             raise ValueError("Die Eckpunkte ergeben keine ausreichend stabile Transformation.")
         matrix.setflags(write=False)
+        # Cache the inverse for repeated drawing and position back-projections.
         inverse_matrix = np.linalg.inv(matrix)
         inverse_matrix.setflags(write=False)
         object.__setattr__(self, "matrix", matrix)

@@ -43,6 +43,7 @@ class PositionEstimate:
 
 def _away_from_camera(calibration: PlaneCalibration, ground: np.ndarray) -> np.ndarray:
     step = 1e-4
+    # Estimate image-height changes along each ground-plane axis using central differences.
     derivatives = []
     for shift in (np.array([step, 0]), np.array([0, step])):
         before = calibration.normalized_to_pixel(tuple(ground - shift))[1]
@@ -62,6 +63,7 @@ def _round_center(contour: np.ndarray, radius_m: float, calibration: PlaneCalibr
     pixel = (float(bottom[:, 0].min() + bottom[:, 0].max()) / 2, float(bottom[0, 1]))
     rim = np.array(calibration.pixel_to_normalized(pixel))
     radius_norm = radius_m / SURFACE_SIZE_M[0]
+    # Move from the visible front rim toward the base center using the known radius.
     return rim + radius_norm * _away_from_camera(calibration, rim)
 
 
@@ -89,11 +91,13 @@ def _cube_center(contour: np.ndarray, side_m: float, calibration: PlaneCalibrati
         if abs(image_heights[0] - image_heights[1]) < 1:
             continue
 
+        # For this camera view, the inward offset projects higher in the image.
         centers.append(options[int(np.argmin(image_heights))])
     if not centers:
         raise ValueError("Keine ausreichend lange, sichtbare Grundkante des Würfels gefunden.")
     center = np.mean(centers, axis=0)
     disagreement_mm = max(np.linalg.norm(point - center) for point in centers) * (SURFACE_SIZE_M[0] * 1000)
+    # Reject inconsistent center estimates from different visible base edges.
     if disagreement_mm > 3:
         raise ValueError("Die aus den Grundkanten geschätzten Mittelpunkte widersprechen sich.")
     return center, len(centers)

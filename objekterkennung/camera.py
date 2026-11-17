@@ -70,6 +70,7 @@ class CameraStream:
     def is_alive(self) -> bool:
         return self._thread is not None and self._thread.is_alive()
 
+    # Copy under the lock so the GUI receives a consistent frame and status.
     def snapshot(self) -> CameraSnapshot:
         with self._lock:
             status = self._status
@@ -114,6 +115,7 @@ class CameraStream:
                 validate_camera_frame(frame)
                 failures = 0
                 with self._lock:
+                    # Keep only the latest frame to avoid latency from a growing frame queue.
                     self._frame = frame.copy()
                     self._sequence += 1
                     self._last_frame_time = monotonic()

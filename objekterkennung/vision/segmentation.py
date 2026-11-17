@@ -139,6 +139,7 @@ def _reuse_unchanged(candidates, masks, reusable):
         if inside and inside < .98 * count:
 
             return candidates, masks
+        # A cache rectangle must not absorb a new component without matching old pixel support.
         if inside and not np.any(support & (cached_support[candidate.color][y:y + height, x:x + width] > 0)):
             return candidates, masks
         (replaced if inside else remaining).append(candidate)
@@ -183,6 +184,7 @@ def process_frame(frame: np.ndarray, config: SegmentationConfig, *,
         for index, contour in enumerate(contours):
 
 
+            # Hole contours are not separate objects; the pixel masks still retain their holes.
             if hierarchy[0, index, 3] != -1:
                 continue
             area = cv2.contourArea(contour)
@@ -216,6 +218,7 @@ def process_frame(frame: np.ndarray, config: SegmentationConfig, *,
                 separate.append(candidate)
                 continue
             result = split_touching(frame, candidate.contour, masks[candidate.color], config.min_area_px)
+            # Try contact-seam evidence after marker-based separation fails.
             if not result.report["accepted"]:
                 contact = split_contact(frame, candidate.contour, masks, candidate.color,
                                         config.hsv_ranges[candidate.color], config.min_area_px,

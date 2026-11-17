@@ -12,6 +12,7 @@ class ColorSupportResult:
 
 
 def invariant_colors(bgr: np.ndarray) -> np.ndarray:
+    # Channel-ratio angles reduce sensitivity to uniform intensity scaling.
     b, g, r = cv2.split(bgr.astype(np.float32))
     return np.stack((np.arctan2(r, np.maximum(g, b)),
                      np.arctan2(g, np.maximum(r, b)),
@@ -54,6 +55,7 @@ def suppress_shadow_colors(frame: np.ndarray, hsv: np.ndarray,
             hues = local_hsv[:, :, 0].astype(np.float32)
             histogram = np.bincount(hues[core].astype(int), minlength=180)
             peak = int(np.argmax(histogram))
+            # Hue wraps around: values near 0 and 179 can represent the same red color.
             offsets = (hues - peak + 90) % 180 - 90
             hue_center = (peak + float(np.median(offsets[core]))) % 180
             hue_distance = np.abs((hues - hue_center + 90) % 180 - 90)
@@ -69,6 +71,7 @@ def suppress_shadow_colors(frame: np.ndarray, hsv: np.ndarray,
             cleaned = cv2.morphologyEx(cleaned, cv2.MORPH_OPEN, kernel)
             cleaned = cv2.morphologyEx(cleaned, cv2.MORPH_CLOSE, kernel)
 
+        # Morphology must not introduce pixels outside the original color support.
         cleaned &= source
         output[color] = cleaned
         rejected[color] = cv2.bitwise_and(source, cv2.bitwise_not(cleaned))

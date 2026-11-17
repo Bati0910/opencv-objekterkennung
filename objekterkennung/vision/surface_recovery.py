@@ -55,12 +55,14 @@ def recover_surface(frame: np.ndarray, contour: np.ndarray, color: str,
                & (hsv[:, :, 1] >= 55) & (hsv[:, :, 2] >= 25))
     allowed[core] = True
     allowed[hard_background] = False
+    # Grow only through compatible pixels connected to the surviving object core.
     _, components = cv2.connectedComponents(allowed.astype(np.uint8))
     labels = np.unique(components[core])
     grown = np.isin(components, labels[labels > 0]).astype(np.uint8) * 255
     kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
     grown = cv2.morphologyEx(grown, cv2.MORPH_CLOSE, kernel)
     grown = cv2.morphologyEx(grown, cv2.MORPH_OPEN, kernel)
+    # Preserve hard exclusions even when morphological closing bridges gaps.
     grown[hard_background] = 0
     contours, _ = cv2.findContours(grown, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     if not contours:

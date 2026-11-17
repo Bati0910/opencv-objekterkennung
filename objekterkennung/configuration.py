@@ -4,6 +4,7 @@ import math
 from pathlib import Path
 
 
+# Resolve paths independently of the working directory used to launch the application.
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 CONFIG_PATH = PROJECT_ROOT / "config.json"
 CALIBRATION_DIRECTORY = PROJECT_ROOT / "runtime" / "calibrations"

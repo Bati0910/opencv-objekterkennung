@@ -3,6 +3,7 @@ import sys
 
 def main() -> int:
     try:
+        # Catch configuration and import errors at the same boundary as GUI startup errors.
         from objekterkennung.ui.app import main as run_interface
         return run_interface()
     except (OSError, ValueError, ImportError) as error:

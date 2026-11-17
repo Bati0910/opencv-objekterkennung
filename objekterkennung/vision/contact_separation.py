@@ -46,6 +46,7 @@ def _seam_evidence(value: np.ndarray, support: np.ndarray, center: float, slope:
     left = np.median([value[rows, columns - flank + k] for k in (-1, 0, 1)], axis=0)
     right = np.median([value[rows, columns + flank + k] for k in (-1, 0, 1)], axis=0)
     supported = (support[rows, columns - flank] > 0) & (support[rows, columns + flank] > 0)
+    # A seam must be darker than both flanks; a one-sided shading edge is insufficient.
     contrast = np.minimum(left, right).astype(float) - middle
     dark = supported & (contrast >= np.maximum(8., .05 * np.minimum(left, right)))
     blocks = [float(np.mean(block)) for block in np.array_split(dark, 4)]
@@ -91,6 +92,7 @@ def split_contact(frame: np.ndarray, contour: np.ndarray, masks: dict[str, np.nd
     lines = _contact_lines(cv2.cvtColor(roi[box], cv2.COLOR_BGR2GRAY))
     silhouette = np.zeros_like(source)
     cv2.drawContours(silhouette, [local_contour], -1, 255, -1)
+    # Protect holes and neighboring instances before refining either side of the seam.
     hard = (silhouette > 0) & (source == 0)
     hard |= (local_masks[color] > 0) & (source == 0)
     for other, mask in local_masks.items():

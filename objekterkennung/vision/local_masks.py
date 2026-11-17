@@ -6,6 +6,7 @@ def component_mask(mask: np.ndarray, contour: np.ndarray) -> np.ndarray:
     point = np.rint(contour.reshape(-1, 2)[0]).astype(int)
     if not (0 <= point[0] < mask.shape[1] and 0 <= point[1] < mask.shape[0]):
         return np.zeros_like(mask)
+    # Select actual connected pixels instead of filling the contour and its holes.
     _, labels = cv2.connectedComponents((mask > 0).astype(np.uint8), connectivity=8)
     label = labels[point[1], point[0]]
     return (labels == label).astype(np.uint8) * 255 if label else np.zeros_like(mask)

@@ -124,6 +124,7 @@ def _paper_color_model(lab, neutral):
         return None
     indices = np.linspace(0, len(xx) - 1, min(8192, len(xx))).astype(int)
     xx, yy = xx[indices], yy[indices]
+    # Model gradual lighting variation with an affine Lab color surface over the paper.
     design = np.column_stack([np.ones(len(xx)), xx / lab.shape[1], yy / lab.shape[0]])
     colors = lab[yy, xx].astype(np.float64)
     keep = np.ones(len(xx), bool)
@@ -132,6 +133,7 @@ def _paper_color_model(lab, neutral):
         if rank < 3:
             return None
         residual = np.linalg.norm(colors - design @ coefficients, axis=1)
+        # Trim large residuals before refitting to reduce the influence of local outliers.
         keep = residual <= max(1., float(np.quantile(residual, .8)))
     tolerance = float(np.clip(2 * np.quantile(residual, .7) + 6, 10, 24))
     return coefficients, tolerance, float(np.median(residual))
@@ -224,6 +226,7 @@ def find_paper_boundary(frame):
         report["reason"] = "Keine ausreichend gestützten Papiergrenzen gefunden."
         return None, report
     best, measurements = groups[0]
+    # Reject competing plausible planes rather than silently choosing one.
     if any(cv2.contourArea(other) >= .35 * cv2.contourArea(best)
            and info["score"] >= .8 * measurements["score"] for other, info in groups[1:]):
         report["reason"] = "Mehrere plausible Flächen; bitte manuell kalibrieren."

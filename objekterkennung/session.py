@@ -66,6 +66,7 @@ class ImageSession:
         self.adaptive_detection.reset()
 
     def open_image(self, path: Path) -> None:
+        # Validate the new image before replacing the current session state.
         frame = load_image(path)
         self.frame = frame
         self.image_path = path
@@ -94,6 +95,7 @@ class ImageSession:
         changed_size = self.frame is not None and self.frame.shape != frame.shape
         if changed_size:
             self.clear()
+        # Freeze the image during manual selection so all corner clicks refer to one frame.
         if self.stage != "calibrating":
             self.frame = frame.copy()
             self.image_path = None
@@ -205,6 +207,7 @@ class ImageSession:
         else:
             raw = detect_frame(self.frame, config, self.calibration, geometry)
         self.result = raw
+        # Keep the analyzed image paired with its result during pauses and adaptive reuse.
         self.result_frame = self.frame.copy()
         if adaptive:
             self.confirmation.clear()

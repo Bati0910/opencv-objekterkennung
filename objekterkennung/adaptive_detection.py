@@ -91,6 +91,7 @@ class AdaptiveDetection:
         if self.setup != setup or (self.last_probe is not None and now < self.last_probe):
             self.reset()
             self.setup = setup
+        # Periodic full analysis limits the lifetime of cached object evidence.
         scheduled = (self.last_full is None or now - self.last_full >= self.FULL_INTERVAL
                      or (self.has_unknown and self.last_run is not None
                          and now - self.last_run >= self.unknown_interval_s - 1e-9)
@@ -114,6 +115,7 @@ class AdaptiveDetection:
         if not full and not retry:
             return None
 
+        # Partial retries reuse stable known instances while unknown regions are analyzed again.
         reusable = None
         if not full:
 

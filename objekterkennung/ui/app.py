@@ -215,6 +215,7 @@ class DetectionApp:
         except (OSError, ValueError, RuntimeError) as error:
             self.report_error(error)
             return
+        # Switch sources only after validation and the immediate thread start succeed.
         self.session.clear()
         self.sync_region_filter_controls(profile)
         self.live_detection = False
@@ -319,6 +320,7 @@ class DetectionApp:
             stream.stop()
         deadline = monotonic() + 2
 
+        # Poll shutdown through Tk callbacks so a slow driver does not block the window.
         def finish() -> None:
             if stream is not None and stream.is_alive and monotonic() < deadline:
                 self.root.after(50, finish)
@@ -344,6 +346,7 @@ class DetectionApp:
         result = self.session.result
         calibration = self.session.calibration
         enabled = self.view.field_filter_enabled.get()
+        # Share one filtered result between the table, status and image overlay.
         if (result is not self._display_source or calibration is not self._display_calibration
                 or enabled != self._display_filter):
             self._display_source = result

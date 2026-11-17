@@ -110,6 +110,7 @@ def find_paper(frame: np.ndarray) -> PaperSearch:
                 groups.append([(threshold, refined)])
             elif threshold not in [entry[0] for entry in match]:
                 match.append((threshold, refined))
+    # Require agreement across brightness thresholds to reject unstable quadrilaterals.
     groups = [group for group in groups if len(group) >= 2]
     method, details = "brightness", None
     if groups:
@@ -118,6 +119,7 @@ def find_paper(frame: np.ndarray) -> PaperSearch:
             return PaperSearch(None, "Mehrere ähnlich große helle Flächen gefunden; bitte manuell kalibrieren.")
         points = np.median([entry[1] for entry in groups[0]], axis=0)
     else:
+        # Fall back to boundary and color contrast if brightness thresholds find no stable plane.
         points, details = find_paper_boundary(small)
         method = "boundary_color"
         if points is None:
@@ -198,6 +200,7 @@ class AutomaticCalibration:
                 self.blocked = False
                 self._finish(now, "Fläche unverändert; bisherige Kalibrierung bleibt fest.")
                 return None
+            # Pause positions while a changed plane awaits confirmation across fresh frames.
             self.blocked = current is not None
             if self.pending and _distance(points, self.pending[0]) > self.STABLE_RATIO * _diagonal(points):
                 self.pending = []

@@ -33,6 +33,7 @@ class ShapeConfirmation:
     def apply(self, candidates, predictions, now: float):
         eligible = [track for track in self._tracks if 0 <= now - track.last_seen <= .8]
 
+        # Assign same-color tracks by overlap, using each previous track at most once.
         edges = sorted((( _iou(candidate.bbox_xywh, track.bbox), i, j)
                         for i, candidate in enumerate(candidates) for j, track in enumerate(eligible)
                         if candidate.color == track.color), reverse=True)
@@ -56,6 +57,7 @@ class ShapeConfirmation:
                     track.confirmed, track.confirmed_at = previous.confirmed, previous.confirmed_at
                     track.gaps = previous.gaps + 1
                     features = prediction.features
+                    # Bridge only one uncertain observation while geometry and timing remain plausible.
                     if (track.confirmed is not None and track.gaps <= 1 and 0 <= now - track.confirmed_at <= .8
                             and features is not None and features.solidity >= .93
                             and min(features.width_px, features.height_px) >= 20):

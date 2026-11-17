@@ -46,6 +46,7 @@ def check_region(candidate, mask, calibration=None, geometry=None, *, reject_thi
         return report
     side = 180
     offset = np.array([[1., 0, x - 1], [0, 1., y - 1], [0, 0, 1.]])
+    # Measure field coverage in plane coordinates to account for perspective.
     transform = np.diag([side, side, 1.]) @ calibration.matrix @ offset
     field = cv2.warpPerspective(support, transform, (side, side), flags=cv2.INTER_NEAREST)
     coverage = float(np.count_nonzero(field) / field.size)
@@ -68,6 +69,7 @@ def check_width(bbox, calibration: PlaneCalibration, geometry: ObjectGeometry) -
     try:
         center = calibration.pixel_to_normalized((x + (width - 1) / 2, y + height - 1))
         radius = diameter / (2 * SURFACE_SIZE_M[0])
+        # Project the smallest expected footprint locally instead of using a global pixel threshold.
         ring = [calibration.normalized_to_pixel((center[0] + radius * math.cos(t),
                                                 center[1] + radius * math.sin(t)))
                 for t in np.linspace(0, 2 * math.pi, 32, endpoint=False)]
